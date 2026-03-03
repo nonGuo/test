@@ -1,0 +1,128 @@
+# AI Prompt 配置
+
+llm:
+  # 模型配置
+  provider: qwen  # qwen / openai / azure
+  model: qwen-max
+  temperature: 0.7
+  max_tokens: 4096
+  
+  # API 配置 (使用环境变量)
+  # api_key: ${QWEN_API_KEY}
+  # base_url: https://dashscope.aliyuncs.com/api/v1
+
+# 测试设计生成 Prompt
+test_design_prompt: |
+  你是一位资深的数仓测试专家，请根据以下输入生成测试设计。
+
+  ## 输入信息
+
+  ### 1. 业务背景 (RS 文档)
+  {rs_content}
+
+  ### 2. 表模型设计 (TS 文档)
+  {ts_content}
+
+  ### 3. 字段加工规则 (Mapping 文档)
+  {mapping_content}
+
+  ## 输出要求
+
+  请按照 XMind 层级结构生成测试设计，输出 JSON 格式。
+
+  ## 生成规则
+
+  1. **必须覆盖的测试点**:
+     - 表存在性检查
+     - 字段完整性 (与 Mapping 一致)
+     - 主键唯一性和非空检查
+     - 度量值计算准确性检查
+
+  2. **根据表类型调整**:
+     - 新建表：需要完整的测试覆盖
+     - 变更表：重点关注变更字段和影响范围
+
+  3. **优先级标注**:
+     - high: 主键、关键度量字段、核心业务逻辑
+     - medium: 一般字段、派生字段
+     - low: 辅助字段、备注类字段
+
+# 测试用例生成 Prompt
+test_case_prompt: |
+  你是一位数仓测试专家，请根据测试设计生成具体的测试用例 (包含 SQL 脚本)。
+
+  ## 输入信息
+
+  ### 1. 测试设计 (XMind 解析结果)
+  {design_content}
+
+  ### 2. 表模型信息
+  - 目标表：{target_table}
+  - 来源表：{source_tables}
+  - 字段列表：{fields}
+
+  ### 3. Mapping 规则
+  {mapping_rules}
+
+  ## SQL 生成规则
+
+  ### 1. 表存在性检查
+  ```sql
+  SELECT COUNT(*) FROM {target_table};
+  ```
+
+  ### 2. 主键唯一性检查
+  ```sql
+  SELECT {primary_key_field}, COUNT(*) as cnt
+  FROM {target_table}
+  GROUP BY {primary_key_field}
+  HAVING COUNT(*) > 1;
+  -- 预期结果：返回 0 条记录
+  ```
+
+  ### 3. 主键非空检查
+  ```sql
+  SELECT COUNT(*) 
+  FROM {target_table}
+  WHERE {primary_key_field} IS NULL;
+  -- 预期结果：返回 0 条记录
+  ```
+
+  ### 4. 数据一致性检查 (直取字段)
+  ```sql
+  SELECT a.{field}, b.{field}
+  FROM {target_table} a
+  JOIN {source_table} b ON a.id = b.id
+  WHERE a.{field} <> b.{field};
+  -- 预期结果：返回 0 条记录
+  ```
+
+  ### 5. 度量值准确性检查
+  ```sql
+  SELECT 
+    SUM({measure_field}) as target_sum,
+    (SELECT SUM({source_measure}) FROM {source_table}) as source_sum
+  FROM {target_table};
+  -- 预期结果：target_sum 与 source_sum 一致
+  ```
+
+# XMind 节点到测试用例的映射规则
+node_mapping_rules:
+  # 层级映射
+  level_mapping:
+    1: category      # 一级节点 -> 用例分类
+    2: scene         # 二级节点 -> 测试场景
+    3: sub_scene     # 三级节点 -> 子场景
+    4: case          # 四级节点 -> 具体用例
+  
+  # 优先级映射 (从 XMind label 到用例 priority)
+  priority_mapping:
+    high: high
+    medium: medium
+    low: low
+  
+  # 测试类型映射
+  test_type_mapping:
+    functional: 功能测试
+    performance: 性能测试
+    data_quality: 数据质量测试

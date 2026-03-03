@@ -1,0 +1,317 @@
+# Mapping 文件表头配置
+# 用于灵活适配不同格式的 Mapping 文档
+
+# ============================================================
+# 表结构映射页签配置
+# ============================================================
+table_mapping:
+  # 分组标识
+  group_id:
+    - 序号
+    - ID
+    - 编号
+    - id
+    - No
+  
+  group:
+    - 分组
+    - 组
+    - Group
+    - group_id
+  
+  # 来源表相关
+  source_schema:
+    - 来源schema
+    - 来源 schema
+    - 源schema
+    - source_schema
+    - 源模式
+    - 来源库
+    - 来源数据库
+  
+  source_table:
+    - 来源表英文名
+    - 来源表
+    - 源表英文名
+    - source_table
+    - 源表
+    - source_table_name
+    - 源表名
+  
+  source_table_cn:
+    - 来源表中文名
+    - 来源表中文
+    - 源表中文名
+    - source_table_cn
+    - 源表中文
+    - 来源表中文名称
+    - 源表中文名称
+  
+  source_alias:
+    - 来源表别名
+    - 源表别名
+    - source_alias
+    - 别名
+    - alias
+    - 表别名
+  
+  # 目标表相关
+  target_schema:
+    - 目标schema
+    - 目标 schema
+    - target_schema
+    - 目标模式
+    - 目标库
+    - 目标数据库
+  
+  target_table:
+    - 目标表英文名
+    - 目标表
+    - target_table
+    - 目标表名
+    - target_table_name
+  
+  target_table_cn:
+    - 目标表中文名
+    - 目标表中文
+    - target_table_cn
+    - 目标表中文名称
+  
+  # 条件相关
+  filter_condition:
+    - 取数条件
+    - 过滤条件
+    - filter_condition
+    - where
+    - 筛选条件
+    - 过滤
+    - 数据过滤条件
+  
+  join_condition:
+    - 关联条件
+    - join_condition
+    - 连接条件
+    - join
+    - 关联
+    - 表关联条件
+
+
+# ============================================================
+# 字段级映射页签配置
+# ============================================================
+field_mapping:
+  # 分组标识
+  group_id:
+    - 序号
+    - ID
+    - 编号
+    - id
+    - No
+  
+  group:
+    - 分组
+    - 组
+    - Group
+    - group_id
+  
+  # 来源字段相关
+  source_schema:
+    - 来源schema
+    - 来源 schema
+    - 源schema
+    - source_schema
+    - 源模式
+    - 来源库
+  
+  source_table:
+    - 来源表英文名
+    - 来源表
+    - 源表英文名
+    - source_table
+    - 源表
+    - source_table_name
+    - 源表名
+  
+  source_alias:
+    - 来源表别名
+    - 源表别名
+    - source_alias
+    - 别名
+    - alias
+    - 表别名
+  
+  source_field:
+    - 来源表字段英文名
+    - 来源字段英文名
+    - source_field
+    - 来源字段
+    - 源字段
+    - 字段英文名
+    - source_column
+    - 源字段名
+    - 来源字段名
+  
+  source_field_cn:
+    - 来源表字段中文名
+    - 来源字段中文名
+    - source_field_cn
+    - 来源字段中文
+    - 源字段中文
+    - 字段中文名
+    - source_column_cn
+    - 来源字段中文名称
+  
+  source_field_type:
+    - 来源表字段类型
+    - 来源字段类型
+    - source_field_type
+    - 字段类型
+    - 类型
+    - source_data_type
+    - 源字段类型
+    - 来源数据类型
+  
+  # 映射规则相关
+  mapping_scene:
+    - 映射场景
+    - 场景
+    - mapping_scene
+    - 加工类型
+    - 转换类型
+    - 映射类型
+    - scene
+    - 字段映射类型
+  
+  transform_rule:
+    - 具体加工规则
+    - 加工规则
+    - transform_rule
+    - 转换规则
+    - 规则
+    - 计算规则
+    - 加工逻辑
+    - transformation
+    - 字段加工规则
+  
+  # 目标字段相关
+  target_schema:
+    - 目标schema
+    - 目标 schema
+    - target_schema
+    - 目标模式
+    - 目标库
+  
+  target_table:
+    - 目标表英文名
+    - 目标表
+    - target_table
+    - 目标表名
+    - target_table_name
+  
+  target_field:
+    - 目标表字段英文名
+    - 目标字段英文名
+    - target_field
+    - 目标字段
+    - 字段英文名
+    - target_column
+    - 目标字段名
+  
+  target_field_cn:
+    - 目标表字段中文名
+    - 目标字段中文名
+    - target_field_cn
+    - 目标字段中文
+    - 字段中文名
+    - target_column_cn
+    - 目标字段中文名称
+  
+  target_field_type:
+    - 目标表字段类型
+    - 目标字段类型
+    - target_field_type
+    - 字段类型
+    - 类型
+    - target_data_type
+    - 目标数据类型
+
+
+# ============================================================
+# 页签名称配置
+# ============================================================
+sheet_names:
+  # 表结构映射页签
+  table:
+    - 表结构映射
+    - 表映射
+    - table_mapping
+    - 表关系
+    - 来源表关系
+    - 表结构
+    - table
+    - 表关系映射
+  
+  # 字段级映射页签
+  field:
+    - 字段级映射
+    - 字段映射
+    - field_mapping
+    - 字段加工
+    - 字段规则
+    - 字段
+    - field
+    - 字段映射规则
+    - 字段级映射规则
+
+
+# ============================================================
+# 扩展配置（可选）
+# ============================================================
+
+# 关键词配置（用于模糊匹配时的特征词识别）
+# 如果内置的模糊匹配不能满足需求，可以在此扩展
+fuzzy_keywords:
+  source_schema:
+    - 来源
+    - 源
+    - schema
+    - 库
+  source_table:
+    - 来源表
+    - 源表
+    - source table
+  source_field:
+    - 来源字段
+    - 源字段
+    - source field
+    - source column
+  target_schema:
+    - 目标
+    - schema
+    - 库
+  target_table:
+    - 目标表
+    - target table
+  target_field:
+    - 目标字段
+    - target field
+    - target column
+  transform_rule:
+    - 加工规则
+    - 转换规则
+    - 规则
+    - transform
+    - rule
+  mapping_scene:
+    - 映射场景
+    - 场景
+    - scene
+  join_condition:
+    - 关联条件
+    - join
+    - 连接
+  filter_condition:
+    - 取数条件
+    - 过滤条件
+    - filter
+    - where

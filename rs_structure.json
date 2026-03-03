@@ -1,0 +1,45 @@
+{
+  "paragraphs": [
+    {
+      "index": 0,
+      "style": "Title",
+      "text": "RS-dwb_cs_order_base_i"
+    },
+    {
+      "index": 1,
+      "style": "Heading 1",
+      "text": "背景"
+    },
+    {
+      "index": 2,
+      "style": "Normal",
+      "text": "Xxx"
+    },
+    {
+      "index": 3,
+      "style": "Heading 1",
+      "text": "Mapping"
+    },
+    {
+      "index": 4,
+      "style": "Normal",
+      "text": "Xxx"
+    },
+    {
+      "index": 5,
+      "style": "Heading 1",
+      "text": "测试要点"
+    },
+    {
+      "index": 6,
+      "style": "List Paragraph",
+      "text": "验证主键order_id唯一性"
+    },
+    {
+      "index": 7,
+      "style": "List Paragraph",
+      "text": "验证含税金额 = 不含税金额 + 税率"
+    }
+  ],
+  "tables": []
+}
