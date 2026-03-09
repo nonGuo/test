@@ -18,3 +18,8 @@ click>=8.1.0
 
 # 测试
 pytest>=7.0.0
+
+# API 服务 (可选)
+flask>=2.3.0
+flask-cors>=4.0.0
+python-dotenv>=1.0.0

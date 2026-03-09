@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: test-case-api
+    ports:
+      - "5000:5000"
+    environment:
+      - API_DEBUG=false
+      - API_HOST=0.0.0.0
+      - API_PORT=5000
+      - LLM_PROVIDER=qwen
+      - LLM_MODEL=qwen-max
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - MAX_INPUT_TOKENS=8000
+      - GENERATION_STRATEGY=auto
+      - LOG_LEVEL=INFO
+    volumes:
+      - api-data:/tmp/test-case-api
+      - ./RS 样例.docx:/app/RS 样例.docx:ro
+      - ./TS 样例.docx:/app/TS 样例.docx:ro
+      - ./mapping 样例.xlsx:/app/mapping 样例.xlsx:ro
+      - ./测试设计模板.xmind:/app/测试设计模板.xmind:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  api-data:

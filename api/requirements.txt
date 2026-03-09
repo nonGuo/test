@@ -1,0 +1,11 @@
+# API 服务依赖
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# 可选：异步任务支持
+# celery>=5.3.0
+# redis>=4.5.0
+
+# 可选：生产环境 WSGI 服务器
+# gunicorn>=21.0.0
+# waitress>=2.1.0

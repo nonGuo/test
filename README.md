@@ -9,6 +9,7 @@ AI 辅助生成数仓 (DWS 数据库) 测试用例的工具，支持两阶段生
 - **支持人工干预**: 测试人员可在阶段一审查/修改测试设计
 - **标准化输出**: 按企业模板生成测试设计和用例
 - **动态模板适配**: 支持 XMind 模板动态调整，无需修改代码
+- **REST API 服务**: 支持 HTTP 调用，易于集成到其他系统
 
 ---
 
@@ -43,17 +44,17 @@ cp .env.example .env
 ```bash
 # 阶段一：生成测试设计
 python -m cli.main generate-design \
-    --rs RS样例.docx \
-    --ts TS样例.docx \
-    --mapping mapping样例.xlsx \
+    --rs RS 样例.docx \
+    --ts TS 样例.docx \
+    --mapping mapping 样例.xlsx \
     --template 测试设计模板.xmind \
     --output output/test_design.xmind
 
 # 阶段二：生成测试用例
 python -m cli.main generate-testcases \
     --xmind output/test_design.xmind \
-    --ts TS样例.docx \
-    --mapping mapping样例.xlsx \
+    --ts TS 样例.docx \
+    --mapping mapping 样例.xlsx \
     --output output/test_cases.xlsx
 ```
 
@@ -80,20 +81,20 @@ llm_client = LLMClientFactory.create(
 # ========== 2. 解析输入文档 ==========
 # 解析 RS 文档（提取测试要点）
 rs_parser = RSParser()
-rs_result = rs_parser.parse("RS样例.docx")
+rs_result = rs_parser.parse("RS 样例.docx")
 rs_content = rs_parser.to_prompt_content(rs_result)
-print(f"RS 测试要点: {rs_result['test_points']}")
+print(f"RS 测试要点：{rs_result['test_points']}")
 
 # 解析 TS 文档（提取表元数据）
 ts_parser = TSParser()
-ts_result = ts_parser.parse("TS样例.docx", llm_client=llm_client)
+ts_result = ts_parser.parse("TS 样例.docx", llm_client=llm_client)
 ts_content = ts_parser.to_prompt_content(ts_result)
-print(f"目标表: {ts_result['interface_table'].table_name if ts_result['interface_table'] else 'N/A'}")
+print(f"目标表：{ts_result['interface_table'].table_name if ts_result['interface_table'] else 'N/A'}")
 
 # 解析 Mapping 文档（提取字段映射）
 mapping_parser = MappingParser()
-mapping_result = mapping_parser.parse("mapping样例.xlsx")
-print(f"字段映射数: {len(mapping_result['field_mappings'])}")
+mapping_result = mapping_parser.parse("mapping 样例.xlsx")
+print(f"字段映射数：{len(mapping_result['field_mappings'])}")
 
 # ========== 3. 生成测试设计 ==========
 design_generator = DesignGenerator(
@@ -108,12 +109,12 @@ design = design_generator.generate(
     mapping_content=str(mapping_result)
 )
 
-print(f"测试设计叶子节点数: {len(design.get_all_leaf_nodes())}")
+print(f"测试设计叶子节点数：{len(design.get_all_leaf_nodes())}")
 
 # ========== 4. 导出 XMind ==========
 xmind_gen = XMindGenerator(template_path="测试设计模板.xmind")
 xmind_gen.generate(design, "output/my_test_design.xmind")
-print("测试设计已保存: output/my_test_design.xmind")
+print("测试设计已保存：output/my_test_design.xmind")
 
 # ========== 5. 生成测试用例 ==========
 # 创建测试用例集
@@ -145,7 +146,7 @@ suite.add_case(case)
 # 导出 Excel
 exporter = TestCaseExporter()
 exporter.export_to_excel(suite, "output/my_test_cases.xlsx")
-print("测试用例已保存: output/my_test_cases.xlsx")
+print("测试用例已保存：output/my_test_cases.xlsx")
 ```
 
 ### 4. 运行端到端测试
@@ -172,9 +173,83 @@ python test_e2e.py
 测试 8: 测试用例导出器 ................................ [PASS]
 测试 9: 完整工作流 .................................... [PASS]
 
-总计: 8 通过, 0 失败, 1 跳过
+总计：8 通过，0 失败，1 跳过
 [SUCCESS] 所有测试通过
 ```
+
+---
+
+## API 服务
+
+### 启动 API 服务
+
+```bash
+# 安装 API 依赖
+pip install -r api/requirements.txt
+
+# 配置环境变量
+cd api
+cp .env.example .env
+# 编辑 .env，设置 QWEN_API_KEY
+
+# 启动服务
+python run.py
+```
+
+服务地址：`http://localhost:5000`
+
+### API 接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/health` | GET | 健康检查 |
+| `/api/v1/config` | GET | 获取配置 |
+| `/api/v1/generate-design` | POST | 生成测试设计 |
+| `/api/v1/download-xmind` | GET | 下载 XMind 文件 |
+
+### 调用示例
+
+```python
+import requests
+
+# 生成测试设计
+files = {
+    'rs': open('RS 样例.docx', 'rb'),
+    'ts': open('TS 样例.docx', 'rb'),
+    'mapping': open('mapping 样例.xlsx', 'rb')
+}
+
+response = requests.post(
+    'http://localhost:5000/api/v1/generate-design',
+    files=files,
+    timeout=300
+)
+
+result = response.json()
+print(f"叶子节点数：{result['data']['stats']['leaf_nodes']}")
+```
+
+**详细文档**: [api/README.md](api/README.md)
+
+---
+
+## Docker 部署
+
+```bash
+# 配置环境变量
+export QWEN_API_KEY=sk-xxxxxxxxxxxxxxxx
+
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+**详细文档**: [api/DOCKER.md](api/DOCKER.md)
 
 ---
 
@@ -431,7 +506,7 @@ llm_client = LLMClientFactory.create("qwen", model="qwen-max")
 generator = DesignGenerator(
     llm_client=llm_client,
     template_path="templates/测试设计模板.xmind",
-    strategy="auto"  # 可选: auto/full/by_branch/by_leaf
+    strategy="auto"  # 可选：auto/full/by_branch/by_leaf
 )
 design = generator.generate(rs_content, ts_content, mapping_content)
 
@@ -464,16 +539,16 @@ llm:
 测试场景分析 (根节点)
 ├── L0-数据结果检查
 │   ├── 表/视图检查
-│   │   └── 存在性与权限检查
-│   │       └── 目标存在性检查
-│   │           └── 验证 F/I/TMP 表是否存在 [priority:high]
-│   └── 字段检查
+│   │   └─ 存在性与权限检查
+│   │       └─ 目标存在性检查
+│   │           └─ 验证 F/I/TMP 表是否存在 [priority:high]
+│   └─ 字段检查
 │       ├── 数据完整性检查
 │       ├── 数据唯一性检查
-│       └── 数据有效性检查
-│           └── 字段功能检查
+│       └─ 数据有效性检查
+│           └─ 字段功能检查
 │               ├── 主外键类检查
-│               └── 度量类检查
+│               └─ 度量类检查
 └── L1-配置/调度作业检查
 ```
 
@@ -517,6 +592,8 @@ WHERE {{ condition }};
 | `上下文问题解决方案.md` | LLM 上下文限制解决方案 |
 | `Mapping 复杂逻辑处理方案.md` | Mapping 规则处理策略 |
 | `生成策略分析.md` | AI 生成策略对比分析 |
+| `api/README.md` | API 服务接口文档 |
+| `api/快速开始.md` | API 服务快速上手 |
 
 ---
 
