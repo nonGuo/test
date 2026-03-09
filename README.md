@@ -67,7 +67,7 @@ python -m cli.main generate-testcases \
 from core.ai import LLMClientFactory
 from core.parser.document_parser import RSParser, TSParser
 from core.parser import MappingParser
-from core.analyzer import TemplateBasedDesignGenerator
+from core.analyzer import DesignGenerator
 from core.generator import XMindGenerator, TestCaseExporter, SQLGenerator
 from core.models import TestCase, TestCaseSuite
 
@@ -96,9 +96,10 @@ mapping_result = mapping_parser.parse("mapping样例.xlsx")
 print(f"字段映射数: {len(mapping_result['field_mappings'])}")
 
 # ========== 3. 生成测试设计 ==========
-design_generator = TemplateBasedDesignGenerator(
+design_generator = DesignGenerator(
     llm_client=llm_client,
-    template_path="测试设计模板.xmind"
+    template_path="测试设计模板.xmind",
+    strategy="auto"  # 自动选择最优策略
 )
 
 design = design_generator.generate(
@@ -207,7 +208,7 @@ python test_e2e.py
 
 **核心组件**：
 - `XMindTemplateLoader`: 解析模板构建树状结构
-- `TemplateBasedDesignGenerator`: 基于模板生成测试设计
+- `DesignGenerator`: 统一的测试设计生成器
 - `_validate_against_template()`: 验证生成结果与模板一致性
 
 **模板调整场景**：
@@ -221,7 +222,7 @@ python test_e2e.py
 **示例**：
 ```python
 # 模板变更后，无需修改代码，直接重新运行即可
-generator = TemplateBasedDesignGenerator(llm_client, template_path="新模板.xmind")
+generator = DesignGenerator(llm_client, template_path="新模板.xmind")
 design = generator.generate(rs, ts, mapping)
 ```
 
@@ -241,7 +242,7 @@ design = generator.generate(rs, ts, mapping)
 
 **自动策略选择**：
 ```python
-generator = SmartChunkedGenerator(
+generator = DesignGenerator(
     llm_client=llm_client,
     template_path="template.xmind",
     strategy="auto"  # 自动选择最优策略
@@ -419,25 +420,18 @@ python cli/main.py generate-testcases \
 ## Python API
 
 ```python
-from core.analyzer import TemplateBasedDesignGenerator, SmartChunkedGenerator
+from core.analyzer import DesignGenerator
 from core.generator import XMindGenerator, TestCaseExporter
 from core.ai import LLMClientFactory
 
 # 创建 LLM 客户端
 llm_client = LLMClientFactory.create("qwen", model="qwen-max")
 
-# 方式1：基于模板生成
-generator = TemplateBasedDesignGenerator(
-    llm_client,
-    template_path="templates/测试设计模板.xmind"
-)
-design = generator.generate(rs_content, ts_content, mapping_content)
-
-# 方式2：智能分块生成（推荐）
-generator = SmartChunkedGenerator(
+# 生成测试设计（自动选择最优策略）
+generator = DesignGenerator(
     llm_client=llm_client,
     template_path="templates/测试设计模板.xmind",
-    strategy="auto"
+    strategy="auto"  # 可选: auto/full/by_branch/by_leaf
 )
 design = generator.generate(rs_content, ts_content, mapping_content)
 

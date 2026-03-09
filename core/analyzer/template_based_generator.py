@@ -6,6 +6,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional
 from ..models import TestDesign, TestNode
+from .base_generator import BaseDesignGenerator
 from .xmind_template_loader import XMindTemplateLoader, TemplateNode
 
 
@@ -88,34 +89,48 @@ TEMPLATE_BASED_PROMPT = """
 """
 
 
-class TemplateBasedDesignGenerator:
-    """基于模板的测试设计生成器"""
+import warnings
+
+
+class TemplateBasedDesignGenerator(BaseDesignGenerator):
+    """
+    基于模板的测试设计生成器
+    
+    .. deprecated::
+        请使用 DesignGenerator 代替，它是 SmartChunkedGenerator 的别名，
+        支持 strategy="full" 参数实现相同功能。
+        
+        迁移示例:
+            # 旧代码
+            generator = TemplateBasedDesignGenerator(llm_client, template_path)
+            
+            # 新代码
+            generator = DesignGenerator(llm_client, template_path, strategy="full")
+    """
     
     def __init__(self, llm_client: Any, template_path: str):
-        """
-        初始化生成器
-        
-        Args:
-            llm_client: LLM 客户端
-            template_path: XMind 模板文件路径
-        """
+        warnings.warn(
+            "TemplateBasedDesignGenerator 已废弃，请使用 DesignGenerator(strategy='full')",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.llm_client = llm_client
         self.template_path = template_path
-        
+
         # 加载模板
         self.template_loader = XMindTemplateLoader(template_path)
         self.template_loader.load()
-    
-    def generate(self, rs_content: str, ts_content: str, 
+
+    def generate(self, rs_content: str, ts_content: str,
                  mapping_content: str) -> TestDesign:
         """
         生成测试设计
-        
+
         Args:
             rs_content: RS 文档内容
             ts_content: TS 文档内容
             mapping_content: Mapping 文档内容
-            
+
         Returns:
             TestDesign: 测试设计对象
         """
@@ -131,94 +146,54 @@ class TemplateBasedDesignGenerator:
                 indent=2
             )
         )
-        
+
         # 调用 LLM
         response = self.llm_client.generate(prompt)
-        
-        # 解析 JSON 响应
+
+        # 解析 JSON 响应 (使用基类方法)
         design_json = self._parse_json_response(response)
-        
-        # 验证并转换
-        return self._json_to_design(design_json)
-    
-    def _parse_json_response(self, response: str) -> Dict:
-        """解析 LLM 的 JSON 响应"""
-        json_match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            json_str = response
-        
-        return json.loads(json_str)
-    
-    def _json_to_design(self, json_data: Dict) -> TestDesign:
-        """将 JSON 转换为 TestDesign 对象，并验证与模板的一致性"""
-        root_node = TestNode(title=json_data.get("root", "测试场景分析"))
-        self._build_nodes(json_data.get("children", []), root_node)
-        
-        design = TestDesign(root=root_node)
-        
+
+        # 验证并转换 (使用基类的 _json_to_design)
+        design = self._json_to_design(design_json)
+
         # 验证与模板的一致性
         self._validate_against_template(design)
-        
+
         return design
-    
-    def _build_nodes(self, children: List[Dict], parent: TestNode) -> None:
-        """递归构建节点"""
-        for child_data in children:
-            node = TestNode(
-                title=child_data.get("title", ""),
-                priority=child_data.get("priority", ""),
-                description=child_data.get("description", ""),
-                tables=child_data.get("tables", [])
-            )
-            parent.add_child(node)
-            
-            # 递归处理子节点
-            if "children" in child_data:
-                self._build_nodes(child_data["children"], node)
-    
+
     def _validate_against_template(self, design: TestDesign) -> bool:
         """
         验证生成的测试设计与模板结构的一致性
-        
+
         Args:
             design: 生成的测试设计
-            
+
         Returns:
             是否一致
         """
         if not self.template_loader.root:
             return True
-        
+
         # 获取模板的所有非叶子节点路径
         template_paths = set()
         for node in self.template_loader.node_map.values():
             if not node.is_leaf:
                 template_paths.add(node.path)
-        
-        # 获取生成设计的所有节点路径
+
+        # 获取生成设计的所有节点路径 (使用基类方法)
         design_paths = set()
         self._collect_design_paths(design.root, "", design_paths)
-        
+
         # 检查是否包含所有模板节点
         missing_paths = template_paths - design_paths
-        
+
         if missing_paths:
             print(f"⚠️  警告：生成的测试设计缺少以下模板节点:")
             for path in missing_paths:
                 print(f"   - {path}")
             # 注意：不抛出异常，允许 AI 有灵活性
-        
+
         return len(missing_paths) == 0
-    
-    def _collect_design_paths(self, node: TestNode, parent_path: str, paths: set):
-        """收集设计中的所有节点路径"""
-        path = f"{parent_path}>{node.title}" if parent_path else node.title
-        paths.add(path)
-        
-        for child in node.children:
-            self._collect_design_paths(child, path, paths)
     
     def generate_structure_only(self) -> TestDesign:
         """
@@ -254,20 +229,25 @@ class TemplateBasedDesignGenerator:
             self._convert_template_nodes(child_template, child_design)
 
 
-class HybridDesignGenerator:
+class HybridDesignGenerator(BaseDesignGenerator):
     """
     混合生成器
-    1. 先生成模板结构
-    2. AI 填充叶子节点内容
-    3. 支持在模板基础上新增节点
+    
+    .. deprecated::
+        该生成器已废弃。请使用 DesignGenerator 代替。
     """
     
     def __init__(self, llm_client: Any, template_path: str):
+        warnings.warn(
+            "HybridDesignGenerator 已废弃，请使用 DesignGenerator",
+            DeprecationWarning,
+            stacklevel=2
+        )
         self.llm_client = llm_client
         self.template_loader = XMindTemplateLoader(template_path)
         self.template_loader.load()
-    
-    def generate(self, rs_content: str, ts_content: str, 
+
+    def generate(self, rs_content: str, ts_content: str,
                  mapping_content: str) -> TestDesign:
         """
         混合方式生成测试设计:
@@ -276,19 +256,16 @@ class HybridDesignGenerator:
         """
         # 1. 生成模板骨架
         design = self.template_loader.root.to_dict()
-        
+
         # 2. AI 填充叶子节点
         filled_design = self._fill_leaf_nodes(
             design, rs_content, ts_content, mapping_content
         )
-        
-        # 3. 转换为 TestDesign
-        root_node = TestNode(title=filled_design.get("title", "测试场景分析"))
-        self._build_nodes(filled_design.get("children", []), root_node)
-        
-        return TestDesign(root=root_node)
-    
-    def _fill_leaf_nodes(self, structure: Dict, rs: str, ts: str, 
+
+        # 3. 转换为 TestDesign (使用基类方法)
+        return self._json_to_design(filled_design)
+
+    def _fill_leaf_nodes(self, structure: Dict, rs: str, ts: str,
                          mapping: str) -> Dict:
         """AI 填充叶子节点"""
         # 构建填充 Prompt
@@ -312,24 +289,3 @@ class HybridDesignGenerator:
 """
         response = self.llm_client.generate(prompt)
         return self._parse_json_response(response)
-    
-    def _parse_json_response(self, response: str) -> Dict:
-        json_match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            json_str = response
-        return json.loads(json_str)
-    
-    def _build_nodes(self, children: List[Dict], parent: TestNode) -> None:
-        for child_data in children:
-            node = TestNode(
-                title=child_data.get("title", ""),
-                priority=child_data.get("priority", ""),
-                description=child_data.get("description", ""),
-                tables=child_data.get("tables", [])
-            )
-            parent.add_child(node)
-            
-            if "children" in child_data:
-                self._build_nodes(child_data["children"], node)

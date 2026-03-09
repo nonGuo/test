@@ -572,23 +572,17 @@ def _extract_table_info(mapping_result: dict) -> dict:
 def _generate_design(llm_client, template_path, rs_content, ts_content,
                      mapping_content, strategy, debug):
     """根据策略生成测试设计"""
-    from core.analyzer import TemplateBasedDesignGenerator, SmartChunkedGenerator
+    from core.analyzer import DesignGenerator
     from core.ai import AITestDesignGenerator
 
-    # 如果有模板，优先使用基于模板的生成器
+    # 如果有模板，使用 DesignGenerator
     if template_path:
-        if strategy == 'auto' or strategy == 'full':
-            # 使用模板生成器
-            generator = TemplateBasedDesignGenerator(llm_client, template_path)
-            return generator.generate(rs_content, ts_content, mapping_content)
-        else:
-            # 使用智能分块生成器
-            generator = SmartChunkedGenerator(
-                llm_client=llm_client,
-                template_path=template_path,
-                strategy=strategy
-            )
-            return generator.generate(rs_content, ts_content, mapping_content)
+        generator = DesignGenerator(
+            llm_client=llm_client,
+            template_path=template_path,
+            strategy=strategy
+        )
+        return generator.generate(rs_content, ts_content, mapping_content)
     else:
         # 无模板，使用传统生成器
         if debug:

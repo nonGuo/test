@@ -7,6 +7,7 @@ import re
 from typing import Dict, List, Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ..models import TestDesign, TestNode
+from .base_generator import BaseDesignGenerator
 from .xmind_template_loader import XMindTemplateLoader, TemplateNode
 
 
@@ -139,15 +140,15 @@ LEAF_GENERATION_PROMPT = """
 """
 
 
-class SmartChunkedGenerator:
+class SmartChunkedGenerator(BaseDesignGenerator):
     """智能分块测试设计生成器"""
-    
+
     def __init__(self, llm_client: Any, template_path: str,
                  max_input_tokens: int = 8000,
                  strategy: str = "auto"):
         """
         初始化生成器
-        
+
         Args:
             llm_client: LLM 客户端
             template_path: XMind 模板路径
@@ -157,11 +158,11 @@ class SmartChunkedGenerator:
         self.llm_client = llm_client
         self.max_input_tokens = max_input_tokens
         self.strategy = strategy
-        
+
         # 加载模板
         self.template_loader = XMindTemplateLoader(template_path)
         self.template_loader.load()
-        
+
         # 统计信息
         self.stats = {
             "total_nodes": len(self.template_loader.node_map),
@@ -169,31 +170,31 @@ class SmartChunkedGenerator:
             "level_1_nodes": len(self.template_loader.get_nodes_by_level(1)),
             "max_level": max(self.template_loader.level_nodes.keys())
         }
-    
-    def generate(self, rs_content: str, ts_content: str, 
+
+    def generate(self, rs_content: str, ts_content: str,
                  mapping_content: str) -> TestDesign:
         """
         生成测试设计
-        
+
         Args:
             rs_content: RS 文档内容
             ts_content: TS 文档内容
             mapping_content: Mapping 文档内容
-            
+
         Returns:
             TestDesign: 测试设计对象
         """
         # 1. 估算内容长度
         input_tokens = self._estimate_tokens(rs_content + ts_content + mapping_content)
         output_tokens = self.stats["leaf_nodes"] * 150  # 每个叶子约 150 tokens
-        
+
         print(f"[INFO] 内容估算：输入={input_tokens} tokens, 输出={output_tokens} tokens")
         print(f"[INFO] 模板统计：{self.stats}")
-        
+
         # 2. 选择生成策略
         selected_strategy = self._select_strategy(input_tokens, output_tokens)
         print(f"[INFO] 选择策略：{selected_strategy}")
-        
+
         # 3. 执行生成
         if selected_strategy == "full":
             design = self._generate_full(rs_content, ts_content, mapping_content)
@@ -203,14 +204,14 @@ class SmartChunkedGenerator:
             design = self._generate_by_leaf(rs_content, ts_content, mapping_content)
         else:
             raise ValueError(f"未知策略：{selected_strategy}")
-        
+
         return design
-    
+
     def _select_strategy(self, input_tokens: int, output_tokens: int) -> str:
         """选择生成策略"""
         if self.strategy != "auto":
             return self.strategy
-        
+
         total_tokens = input_tokens + output_tokens
         
         # 策略选择逻辑
@@ -398,36 +399,9 @@ class SmartChunkedGenerator:
         # 简单压缩：截取前 max_length 字
         return text[:max_length] + "... (内容已压缩)"
     
-    def _parse_json_response(self, response: str) -> Dict:
-        """解析 JSON 响应"""
-        json_match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            json_str = response
-        
-        return json.loads(json_str)
-    
-    def _json_to_design(self, json_data: Dict) -> TestDesign:
-        """将 JSON 转换为 TestDesign"""
-        root_node = TestNode(title=json_data.get("root", "测试场景分析"))
-        self._build_nodes(json_data.get("children", []), root_node)
-        return TestDesign(root=root_node)
-    
-    def _build_nodes(self, children: List[Dict], parent: TestNode) -> None:
-        """递归构建节点"""
-        for child_data in children:
-            node = TestNode(
-                title=child_data.get("title", ""),
-                priority=child_data.get("priority", ""),
-                description=child_data.get("description", ""),
-                tables=child_data.get("tables", [])
-            )
-            parent.add_child(node)
-            
-            if "children" in child_data:
-                self._build_nodes(child_data["children"], node)
-    
+    # 注：以下方法由基类 BaseDesignGenerator 提供
+    # _parse_json_response, _json_to_design, _build_nodes
+
     def _template_node_to_dict(self, node: TemplateNode) -> Dict:
         """将模板节点转换为字典"""
         return {
@@ -536,3 +510,9 @@ class SmartChunkedGenerator:
             current_node.add_child(leaf_node)
         
         return TestDesign(root=root_node)
+
+
+# ============== 别名，统一入口 ==============
+
+# DesignGenerator 作为推荐的主入口
+DesignGenerator = SmartChunkedGenerator

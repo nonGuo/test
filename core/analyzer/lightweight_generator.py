@@ -7,6 +7,7 @@ import re
 from typing import Dict, List, Any, Optional
 from ..models import TestDesign, TestNode
 from ..parser import MappingProcessor
+from .base_generator import BaseDesignGenerator
 from .xmind_template_loader import XMindTemplateLoader
 
 
@@ -128,14 +129,14 @@ SQL_GENERATION_PROMPT = """
 """
 
 
-class LightweightDesignGenerator:
+class LightweightDesignGenerator(BaseDesignGenerator):
     """轻量级测试设计生成器"""
-    
-    def __init__(self, llm_client: Any, template_path: str, 
+
+    def __init__(self, llm_client: Any, template_path: str,
                  mapping_processor: MappingProcessor):
         """
         初始化生成器
-        
+
         Args:
             llm_client: LLM 客户端
             template_path: XMind 模板路径
@@ -145,7 +146,7 @@ class LightweightDesignGenerator:
         self.template_loader = XMindTemplateLoader(template_path)
         self.template_loader.load()
         self.mapping_processor = mapping_processor
-        
+
         # 缓存已生成的测试点
         self.generated_points: Dict[str, List[Dict]] = {}
     
@@ -288,37 +289,9 @@ class LightweightDesignGenerator:
     
     # ============== 辅助方法 ==============
     
-    def _parse_json_response(self, response: str) -> Dict:
-        """解析 JSON 响应"""
-        json_match = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(1)
-        else:
-            json_str = response
-        return json.loads(json_str)
-    
-    def _json_to_design(self, json_data: Dict) -> TestDesign:
-        """将 JSON 转换为 TestDesign"""
-        root_node = TestNode(title=json_data.get("root", "测试场景分析"))
-        self._build_nodes(json_data.get("children", []), root_node)
-        return TestDesign(root=root_node)
-    
-    def _build_nodes(self, children: List[Dict], parent: TestNode) -> None:
-        """递归构建节点"""
-        for child_data in children:
-            node = TestNode(
-                title=child_data.get("title", ""),
-                priority=child_data.get("priority", ""),
-                description=child_data.get("description", "")
-            )
-            # 存储测试类型
-            if "test_type" in child_data:
-                node.test_type = child_data["test_type"]
-            parent.add_child(node)
-            
-            if "children" in child_data:
-                self._build_nodes(child_data["children"], node)
-    
+    # 注：以下方法由基类 BaseDesignGenerator 提供
+    # _parse_json_response, _json_to_design, _build_nodes
+
     def _infer_test_type(self, node_title: str) -> str:
         """根据节点标题推断测试类型"""
         title = node_title.upper()

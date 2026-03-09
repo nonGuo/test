@@ -6,38 +6,38 @@ import os
 from core.parser import DocumentParserFactory
 from core.ai import AITestDesignGenerator, AITestCaseGenerator, LLMClientFactory
 from core.generator import XMindGenerator, SQLGenerator, TestCaseExporter
-from core.analyzer import XMindAnalyzer, TemplateBasedDesignGenerator, HybridDesignGenerator
+from core.analyzer import XMindAnalyzer, DesignGenerator
 from core.models import TestCase, TestCaseSuite
 
 
 class TestDesignWorkflow:
     """测试设计生成工作流"""
-    
+
     def __init__(self, llm_provider: str = "qwen", model: str = "qwen-max",
-                 template_path: str = None):
+                 template_path: str = None, strategy: str = "auto"):
         """
         初始化工作流
-        
+
         Args:
             llm_provider: LLM 提供商
             model: 模型名称
             template_path: XMind 模板路径 (用于动态模板适配)
+            strategy: 生成策略 (auto/full/by_branch/by_leaf)
         """
         # 创建 LLM 客户端
         self.llm_client = LLMClientFactory.create(llm_provider, model=model)
-        
+
         # 保存模板路径
         self.template_path = template_path
-        
-        # 根据是否有模板选择生成器
+
+        # 使用统一的 DesignGenerator
         if template_path:
-            # 使用基于模板的生成器 (推荐)
-            self.design_generator = TemplateBasedDesignGenerator(
-                self.llm_client, template_path
+            self.design_generator = DesignGenerator(
+                self.llm_client, template_path, strategy=strategy
             )
-            print(f"[INFO] 使用基于模板的生成器：{template_path}")
+            print(f"[INFO] 使用 DesignGenerator：{template_path}, strategy={strategy}")
         else:
-            # 使用传统生成器
+            # 无模板，使用传统生成器
             self.design_generator = AITestDesignGenerator(self.llm_client)
             print("[INFO] 使用传统生成器 (无模板)")
         
