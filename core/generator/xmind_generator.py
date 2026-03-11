@@ -39,7 +39,32 @@ class XMindGenerator:
             else:
                 # 创建空白工作簿 - 使用 xmind.load 从临时文件创建
                 # 先创建一个临时的空 xmind 文件
-                raise ValueError("需要提供模板文件，或确保测试设计模板.xmind存在于项目根目录")
+                raise ValueError("需要提供模板文件，或确保测试设计模板.xmind 存在于项目根目录")
+
+    def clear_template_content(self) -> None:
+        """
+        清除模板中的原有内容（多语言警告等）
+        由于 xmind 库不支持直接删除子主题，我们创建一个新的 sheet 替代
+        """
+        import xmind
+        
+        if not self.workbook:
+            return
+            
+        # 获取原有的 sheet（包含模板警告）
+        old_sheet = self.workbook.getPrimarySheet()
+        
+        # 创建一个新的空白 sheet
+        new_sheet = self.workbook.createSheet()
+        new_sheet.setTitle("测试场景分析")
+        
+        # 尝试删除原有的 sheet
+        if old_sheet:
+            try:
+                self.workbook.removeSheet(old_sheet)
+            except Exception:
+                # 如果无法删除，至少确保我们使用新的 sheet
+                pass
 
     def generate(self, design: TestDesign, output_path: str) -> None:
         """
@@ -54,16 +79,15 @@ class XMindGenerator:
         if not self.workbook:
             self.create_workbook()
 
+        # 清除模板中的原有内容（多语言警告等）- 只保留 LLM 生成的设计
+        self.clear_template_content()
+
         # 获取第一个 sheet
         sheet = self.workbook.getPrimarySheet()
-        sheet.setTitle("测试场景分析")
 
         # 获取根主题
         root_topic = sheet.getRootTopic()
         root_topic.setTitle(design.root.title if design.root else "测试场景分析")
-
-        # 清除原有子主题（如果有）
-        # 注：xmind 库可能不支持直接删除，所以我们通过添加新内容覆盖
 
         # 构建树结构
         if design.root and design.root.children:
@@ -114,6 +138,9 @@ class XMindGenerator:
 
         if not self.workbook:
             self.create_workbook()
+
+        # 清除模板中的原有内容（多语言警告等）- 只保留 LLM 生成的设计
+        self.clear_template_content()
 
         sheet = self.workbook.getPrimarySheet()
         sheet.setTitle("测试设计")
