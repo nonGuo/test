@@ -1,0 +1,152 @@
+# SQL 生成配置
+
+# SQL 模板配置
+sql_templates:
+  # 默认模板目录
+  template_dir: "config/sql_templates"
+  
+  # 启用的模板
+  enabled_templates:
+    - table_exists
+    - table_row_count
+    - primary_key_unique
+    - primary_key_not_null
+    - field_completeness
+    - field_precision_check
+    - enum_value_check
+    - foreign_key_referential_integrity
+    - direct_field_consistency
+    - direct_aggregation_consistency
+    - calculated_field_validation
+    - measure_aggregation_accuracy
+    - measure_non_negative
+    - measure_outlier_check
+    - field_null_rate_check
+    - required_field_not_null
+    - data_distribution_check
+    - data_duplication_check
+    - case_when_rule_validation
+    - multi_join_consistency
+    - data_freshness_check
+    - partition_completeness
+
+# Mapping 规则到 SQL 模板的映射
+mapping_rule_templates:
+  DIRECT:
+    default: direct_single_field
+    with_filter: direct_with_filter
+  CALC:
+    default: calc_basic
+    with_null_handling: calc_with_null_handling
+  AGG:
+    SUM: agg_sum
+    COUNT: agg_count
+    AVG: agg_avg
+    MAX: agg_max
+    MIN: agg_min
+  CASE:
+    with_else: case_when_with_else
+    without_else: case_when_basic
+  JOIN:
+    single: join_single
+    multiple: join_multiple
+  FUNC:
+    string: func_string
+    date: func_date
+    number: func_number
+  CONST:
+    default: const_value
+  SUBQ:
+    correlated: subquery_correlated
+    non_correlated: subquery_non_correlated
+
+# SQL 生成参数默认值
+default_params:
+  tolerance: 0.01          # 默认容差
+  min_rows: 1              # 最小行数
+  min_partitions: 1        # 最小分区数
+  max_delay_hours: 24      # 最大延迟小时数
+  expected_null_rate: "< 5%"  # 期望空值率
+  limit_rows: 100          # LIMIT 默认值
+  
+# 字段类型到检查类型的映射
+field_type_checks:
+  STRING:
+    - field_precision_check
+    - enum_value_check
+  NUMBER:
+    - measure_non_negative
+    - measure_outlier_check
+  DATE:
+    - data_freshness_check
+  BOOLEAN:
+    - enum_value_check
+
+# 规则类型到检查类型的映射
+rule_type_checks:
+  DIRECT:
+    - direct_field_consistency
+  CALC:
+    - calculated_field_validation
+  AGG:
+    - measure_aggregation_accuracy
+  CASE:
+    - case_when_rule_validation
+  JOIN:
+    - multi_join_consistency
+
+# SQL 质量配置
+quality:
+  # 最低质量分数
+  min_score: 60
+  
+  # 必须检查项
+  required_checks:
+    - has_comment
+    - has_expected_result
+    - has_test_description
+  
+  # 性能检查
+  performance:
+    warn_select_star: true
+    warn_function_on_column: true
+    require_limit: true
+  
+  # 安全检查
+  security:
+    check_drop_statement: true
+    check_delete_statement: true
+    check_exec_statement: true
+
+# 预期结果模板
+expected_result_templates:
+  primary_key_unique: "返回 0 条记录，主键 {field} 唯一性验证通过"
+  primary_key_not_null: "返回 0 条记录，主键 {field} 空值率为 0%"
+  direct_field_consistency: "返回 0 条记录，{field} 字段与源数据完全一致"
+  measure_aggregation_accuracy: "返回 0 条记录，度量值 {field} 汇总差异率 < {tolerance}%"
+  field_null_rate_check: "null_rate_pct {expected_rate}"
+  foreign_key_referential_integrity: "返回 0 条记录，外键 {field} 参照完整性验证通过"
+  case_when_rule_validation: "返回 0 条记录，CASE WHEN 规则执行正确"
+  calculated_field_validation: "返回 0 条记录，计算字段 {field} 值与预期一致"
+
+# SQL 生成策略
+generation_strategy:
+  # 优先级顺序
+  priority_order:
+    - primary_key_checks      # 主键检查优先
+    - not_null_checks         # 非空检查
+    - consistency_checks      # 一致性检查
+    - aggregation_checks      # 聚合检查
+    - distribution_checks     # 分布检查
+  
+  # 批量生成配置
+  batch:
+    max_batch_size: 50        # 最大批量大小
+    parallel: false           # 是否并行生成
+  
+  # 优化配置
+  optimization:
+    auto_optimize: true       # 自动优化 SQL
+    add_comments: true        # 添加注释
+    format_sql: true          # 格式化 SQL
+    add_limit: true           # 添加 LIMIT

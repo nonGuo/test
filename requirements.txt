@@ -1,6 +1,6 @@
 # 核心依赖
 xmindparser>=1.0.0
-xmind-sdk-python>=1.0.0
+xmind>=1.0.0
 
 # AI 集成
 openai>=1.0.0  # 或使用其他 LLM SDK
